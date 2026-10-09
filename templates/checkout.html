@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Pay bill — Sanjeevani Clinic{% endblock %}
+{% block content %}
+<div class="form-shell wide shop">
+  <div class="eyebrow-block">
+    <h1>Pay your bill</h1>
+    <p class="sub">Check your items, add your delivery address and choose how to pay.</p>
+  </div>
+
+  <div class="cart-layout">
+    <form class="card" action="/checkout" method="post" id="pay-form">
+      {% if error %}<div class="alert">{{ error }}</div>{% endif %}
+
+      <div class="field">
+        <label for="address">Delivery address</label>
+        <textarea id="address" name="address" rows="3" required maxlength="200"
+                  placeholder="House no., street, area, city, PIN code">{{ form.address if form.address else '' }}</textarea>
+      </div>
+
+      <div class="field">
+        <label>Payment method</label>
+        <div class="pay-options">
+          {% for key, label in methods.items() %}
+          <label class="pay-option">
+            <input type="radio" name="payment_method" value="{{ key }}" {% if (form.payment_method or 'upi') == key %}checked{% endif %} />
+            <span><b>{{ label }}</b></span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <p class="muted demo-note">🔒 Demo checkout: no real money is charged and no card or UPI details are collected.</p>
+      <div class="submit-row"><button type="submit" id="pay-btn">Pay ₹{{ cart.total }}</button></div>
+    </form>
+
+    <aside class="card bill">
+      <h3>Bill summary</h3>
+      {% for it in cart.lines %}
+      <div class="bill-row"><span>{{ it.name }} × {{ it.qty }}</span><span>₹{{ it.line_total }}</span></div>
+      {% endfor %}
+      <hr />
+      <div class="bill-row"><span>Subtotal</span><span>₹{{ cart.subtotal }}</span></div>
+      <div class="bill-row"><span>Delivery</span><span>{% if cart.delivery %}₹{{ cart.delivery }}{% else %}Free{% endif %}</span></div>
+      <div class="bill-row total"><span>Total</span><span>₹{{ cart.total }}</span></div>
+      <a href="/cart" class="btn-ghost bill-btn">Edit cart</a>
+    </aside>
+  </div>
+</div>
+
+<script>
+(function () {
+  var btn = document.getElementById('pay-btn');
+  var total = {{ cart.total }};
+  function label() {
+    var m = document.querySelector('input[name="payment_method"]:checked');
+    btn.textContent = (m && m.value === 'cod') ? 'Place order (pay on delivery)' : 'Pay ₹' + total;
+  }
+  document.querySelectorAll('input[name="payment_method"]').forEach(function (r) { r.addEventListener('change', label); });
+  label();
+  document.getElementById('pay-form').addEventListener('submit', function () { btn.disabled = true; btn.textContent = 'Processing…'; });
+})();
+</script>
+{% endblock %}

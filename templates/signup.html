@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Sign up — Sanjeevani Clinic{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-split">
+    <aside class="auth-side">
+      <h2>Join Sanjeevani Clinic.</h2>
+      <p>Create a free account and get screened, advised and booked — all in one place.</p>
+      <ul>
+        <li>Takes less than a minute</li>
+        <li>Photo-based injury guidance</li>
+        <li>Follow-up reminders after your visit</li>
+      </ul>
+    </aside>
+    <div class="auth-main">
+      <h1>Create your account</h1>
+      <p class="sub">It takes less than a minute.</p>
+      {% if error %}<div class="alert">{{ error }}</div>{% endif %}
+      <form action="/signup" method="post">
+        <div class="field"><label for="name">Full name</label>
+          <input type="text" id="name" name="name" required maxlength="80" autocomplete="name" value="{{ form.get('name', '') }}" /></div>
+        <div class="field"><label for="email">Email</label>
+          <input type="email" id="email" name="email" required autocomplete="email" value="{{ form.get('email', '') }}" /></div>
+        <div class="field"><label for="password">Password (min 8 characters)</label>
+          <div class="input-wrap">
+            <input type="password" id="password" name="password" required minlength="8" autocomplete="new-password" />
+            <button type="button" class="pw-toggle" data-target="password" aria-label="Show or hide password">👁</button>
+          </div></div>
+        <div class="field"><label for="confirm">Confirm password</label>
+          <input type="password" id="confirm" name="confirm" required minlength="8" autocomplete="new-password" /></div>
+        <div class="submit-row"><button type="submit">Sign up</button></div>
+      </form>
+      <p class="auth-alt">Already have an account? <a href="/login">Log in</a></p>
+    </div>
+  </div>
+</div>
+{% endblock %}

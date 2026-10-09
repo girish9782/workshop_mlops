@@ -1,0 +1,15 @@
+{% set p = request.url.path if request is defined else '' %}
+<a href="/predict" class="nav-link{% if p == '/predict' %} active{% endif %}">Covid screening</a>
+{% if user %}
+  <a href="/chat" class="nav-link{% if p == '/chat' %} active{% endif %}">Book a doctor</a>
+  <a href="/appointments" class="nav-link{% if p == '/appointments' %} active{% endif %}">My appointments</a>
+  <a href="/medicines" class="nav-link{% if p.startswith(('/medicines', '/checkout', '/orders')) %} active{% endif %}">💊 Medicines</a>
+  <a href="/cart" class="nav-link{% if p == '/cart' %} active{% endif %}">🛒 Cart{% if cart_count is defined %}{% set n = cart_count(user.id) %}<span class="cart-badge" id="nav-cart-count"{% if not n %} style="display:none"{% endif %}>{{ n }}</span>{% endif %}</a>
+  <button type="button" id="su-open" class="btn-soft">User activity</button>
+  <span class="nav-user"><span class="avatar">{{ user.name[:1]|upper }}</span>Hi, {{ user.name.split(' ')[0] }}</span>
+  <form action="/logout" method="post" class="inline-form"><button type="submit" class="btn-ghost">Log out</button></form>
+{% else %}
+  <button type="button" id="su-open" class="btn-soft">User activity</button>
+  <a href="/login" class="btn-ghost">Log in</a>
+  <a href="/signup" class="btn-solid">Sign up</a>
+{% endif %}

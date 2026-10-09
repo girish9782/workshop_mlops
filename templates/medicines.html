@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Medicine store — Sanjeevani Clinic{% endblock %}
+{% block content %}
+<div class="form-shell wide shop">
+  <div class="eyebrow-block">
+    <span class="eyebrow-pill"><span class="dot"></span>Medicine store</span>
+    <h1>Medicines &amp; creams</h1>
+    <p class="sub">Add what you need to the cart, then pay your bill in one step.</p>
+  </div>
+
+  <div class="tabs">
+    <a href="/medicines" class="tab{% if not active %} active{% endif %}">All</a>
+    <a href="/medicines?cat=medicines" class="tab{% if active == 'medicines' %} active{% endif %}">Medicines</a>
+    <a href="/medicines?cat=creams" class="tab{% if active == 'creams' %} active{% endif %}">Creams &amp; gels</a>
+  </div>
+
+  <div class="med-grid">
+    {% for m in medicines %}
+    <div class="med-card">
+      <div class="med-thumb {{ 'cream' if m.category == 'Creams & Gels' else 'pill' }}">{{ '🧴' if m.category == 'Creams & Gels' else '💊' }}</div>
+      <div class="med-body">
+        <span class="med-cat">{{ m.category }}</span>
+        <h3>{{ m.name }}</h3>
+        <p>{{ m.description }}</p>
+      </div>
+      <div class="med-foot">
+        <span class="price">₹{{ m.price }}</span>
+        <button type="button" class="btn-soft add-btn" data-id="{{ m.id }}">Add to cart</button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <p class="muted med-note">
+    Use medicines only as directed on the label. If your problem continues, please
+    <a href="/chat"><b>book a doctor</b></a>. This is a demo store with sample prices.
+  </p>
+</div>
+
+<div class="cartbar" id="cartbar"{% if not cart.count %} hidden{% endif %}>
+  <div class="cb-info">🛒 <b id="cb-count">{{ cart.count }}</b> item(s) · ₹<span id="cb-total">{{ cart.subtotal }}</span></div>
+  <div class="cb-actions">
+    <a href="/cart" class="btn-ghost">View cart</a>
+    <a href="/checkout" class="btn-solid">Pay bill →</a>
+  </div>
+</div>
+
+<script>
+(function () {
+  var bar = document.getElementById('cartbar');
+  function update(d) {
+    document.getElementById('cb-count').textContent = d.count;
+    document.getElementById('cb-total').textContent = d.subtotal;
+    bar.hidden = d.count < 1;
+    var nb = document.getElementById('nav-cart-count');
+    if (nb) { nb.textContent = d.count; nb.style.display = d.count ? '' : 'none'; }
+  }
+  document.querySelectorAll('.add-btn').forEach(function (b) {
+    b.addEventListener('click', function () {
+      b.disabled = true;
+      fetch('/api/cart/add', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ medicine_id: parseInt(b.dataset.id, 10), qty: 1 })
+      }).then(function (r) {
+        if (r.status === 401) { location.href = '/login'; return null; }
+        return r.json().then(function (d) { return { ok: r.ok, d: d }; });
+      }).then(function (x) {
+        if (!x) return;
+        if (x.ok) {
+          update(x.d); b.textContent = 'Added ✓';
+          setTimeout(function () { b.textContent = 'Add to cart'; b.disabled = false; }, 900);
+        } else { b.textContent = 'Try again'; b.disabled = false; }
+      }).catch(function () { b.textContent = 'Try again'; b.disabled = false; });
+    });
+  });
+})();
+</script>
+{% endblock %}

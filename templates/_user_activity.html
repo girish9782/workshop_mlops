@@ -1,0 +1,43 @@
+<div id="su-modal" class="su-modal" aria-hidden="true">
+    <div class="su-box" role="dialog" aria-labelledby="su-title">
+      <div class="su-head">
+        <h2 id="su-title">All users: login / logout</h2>
+        <button type="button" id="su-close" class="su-close" aria-label="Close">&times;</button>
+      </div>
+      <div id="su-body" class="su-body"><p class="muted">Loading…</p></div>
+    </div>
+  </div>
+  <script>
+  (function () {
+    var btn = document.getElementById('su-open'), modal = document.getElementById('su-modal'),
+        body = document.getElementById('su-body');
+    function esc(t) { var d = document.createElement('div'); d.textContent = t == null ? '' : t; return d.innerHTML; }
+    function load() {
+      body.innerHTML = '<p class="muted">Loading…</p>';
+      fetch('/api/admin/users').then(function (r) {
+        if (r.status === 401) { body.innerHTML = '<div class="alert">Please <a href="/login">log in</a> as a super user to see this.</div>'; return null; }
+        if (r.status === 403) { body.innerHTML = '<div class="alert">Only a super user can see everyone\'s login / logout details.</div>'; return null; }
+        return r.json();
+      }).then(function (d) {
+        if (!d) return;
+        if (d.error) { body.innerHTML = '<div class="alert">' + esc(d.error) + '</div>'; return; }
+        var html = '<table class="appt-table"><thead><tr><th>Name</th><th>Role</th><th>Login time</th><th>Logout time</th></tr></thead><tbody>';
+        d.users.forEach(function (u) {
+          html += '<tr><td>' + esc(u.name) + (u.is_you ? ' <span class="muted">(you)</span>' : '') +
+            '<br><span class="muted">' + esc(u.email) + '</span></td>' +
+            '<td>' + (u.role === 'super_user' ? 'Super user' : 'Patient') + '</td>' +
+            '<td>' + esc(u.last_login_at || '—') + '</td><td>' + esc(u.last_logout_at || '—') + '</td></tr>';
+        });
+        body.innerHTML = html + '</tbody></table>';
+      }).catch(function () { body.innerHTML = '<div class="alert">Could not load users.</div>'; });
+    }
+    function setOpen(open) {
+      modal.classList.toggle('open', open); modal.setAttribute('aria-hidden', !open);
+      if (open) load();
+    }
+    if (btn) btn.addEventListener('click', function () { setOpen(true); });
+    document.getElementById('su-close').addEventListener('click', function () { setOpen(false); });
+    modal.addEventListener('click', function (e) { if (e.target === modal) setOpen(false); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setOpen(false); });
+  })();
+  </script>

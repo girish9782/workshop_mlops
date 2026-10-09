@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Order #{{ order.id }} — Sanjeevani Clinic{% endblock %}
+{% block content %}
+<div class="form-shell shop">
+  <div class="card receipt">
+    <div class="success-icon">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <h1>{% if order.status == 'paid' %}Payment successful{% else %}Order placed{% endif %}</h1>
+    <p class="sub">
+      {% if order.status == 'paid' %}Thank you, {{ user.name.split(' ')[0] }}! Your bill is paid and your order is being packed.
+      {% else %}Thank you, {{ user.name.split(' ')[0] }}! Please pay ₹{{ order.total }} in cash when your order arrives.{% endif %}
+    </p>
+
+    <div class="receipt-meta">
+      <div><span class="muted">Order no.</span><b>#{{ order.id }}</b></div>
+      <div><span class="muted">Date</span><b>{{ order.created_at }}</b></div>
+      <div><span class="muted">Payment</span><b>{{ methods.get(order.payment_method, order.payment_method) }}{% if order.status == 'paid' %} · Paid{% else %} · Pay on delivery{% endif %}</b></div>
+    </div>
+
+    <div class="bill">
+      {% for l in order.lines %}
+      <div class="bill-row"><span>{{ l.name }} × {{ l.qty }}</span><span>₹{{ l.line_total }}</span></div>
+      {% endfor %}
+      <hr />
+      <div class="bill-row"><span>Subtotal</span><span>₹{{ order.subtotal }}</span></div>
+      <div class="bill-row"><span>Delivery</span><span>{% if order.delivery %}₹{{ order.delivery }}{% else %}Free{% endif %}</span></div>
+      <div class="bill-row total"><span>Total</span><span>₹{{ order.total }}</span></div>
+    </div>
+
+    <p class="muted"><b>Delivering to:</b> {{ order.address }}</p>
+    <p class="muted demo-note">This was a demo payment. No real money was charged.</p>
+
+    <div class="cta-row center">
+      <a href="/medicines" class="btn-primary">Back to medicines</a>
+      <a href="/chat" class="btn-ghost">Book a doctor</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

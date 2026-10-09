@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Log in — Sanjeevani Clinic{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-split">
+    <aside class="auth-side">
+      <h2>Care that starts before the queue.</h2>
+      <p>Log in to chat with our assistant and book the right doctor in minutes.</p>
+      <ul>
+        <li>Instant covid screening</li>
+        <li>Smart doctor suggestions</li>
+        <li>Your appointments in one place</li>
+      </ul>
+    </aside>
+    <div class="auth-main">
+      <h1>Welcome back</h1>
+      <p class="sub">Log in to book a doctor with our assistant.</p>
+      {% if error %}<div class="alert">{{ error }}</div>{% endif %}
+      <form action="/login" method="post">
+        <div class="field"><label for="email">Email</label>
+          <input type="email" id="email" name="email" required autocomplete="email" value="{{ form.get('email', '') }}" /></div>
+        <div class="field"><label for="password">Password</label>
+          <div class="input-wrap">
+            <input type="password" id="password" name="password" required autocomplete="current-password" />
+            <button type="button" class="pw-toggle" data-target="password" aria-label="Show or hide password">👁</button>
+          </div></div>
+        <div class="submit-row"><button type="submit">Log in</button></div>
+      </form>
+      <p class="auth-alt">New here? <a href="/signup">Create an account</a></p>
+    </div>
+  </div>
+</div>
+{% endblock %}

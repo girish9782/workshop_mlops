@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}My cart — Sanjeevani Clinic{% endblock %}
+{% block content %}
+<div class="form-shell wide shop">
+  <div class="eyebrow-block"><h1>My cart</h1></div>
+
+  {% if cart.lines %}
+  <div class="cart-layout">
+    <div class="card">
+      {% for it in cart.lines %}
+      <div class="cart-row">
+        <div class="med-thumb sm {{ 'cream' if it.category == 'Creams & Gels' else 'pill' }}">{{ '🧴' if it.category == 'Creams & Gels' else '💊' }}</div>
+        <div class="cart-info"><b>{{ it.name }}</b><span class="muted">₹{{ it.price }} each</span></div>
+        <div class="qty">
+          <button type="button" class="qty-btn" data-id="{{ it.medicine_id }}" data-qty="{{ it.qty - 1 }}" aria-label="Decrease">−</button>
+          <span>{{ it.qty }}</span>
+          <button type="button" class="qty-btn" data-id="{{ it.medicine_id }}" data-qty="{{ it.qty + 1 }}" aria-label="Increase"{% if it.qty >= max_qty %} disabled{% endif %}>+</button>
+        </div>
+        <div class="line-total">₹{{ it.line_total }}</div>
+        <button type="button" class="icon-x qty-btn" data-id="{{ it.medicine_id }}" data-qty="0" aria-label="Remove {{ it.name }}">✕</button>
+      </div>
+      {% endfor %}
+    </div>
+
+    <aside class="card bill">
+      <h3>Bill summary</h3>
+      <div class="bill-row"><span>Subtotal</span><span>₹{{ cart.subtotal }}</span></div>
+      <div class="bill-row"><span>Delivery</span><span>{% if cart.delivery %}₹{{ cart.delivery }}{% else %}Free{% endif %}</span></div>
+      <div class="bill-row total"><span>Total</span><span>₹{{ cart.total }}</span></div>
+      <p class="muted">Free delivery on orders of ₹500 and above.</p>
+      <a href="/checkout" class="btn-primary bill-btn">Pay bill →</a>
+      <a href="/medicines" class="btn-ghost bill-btn">Add more items</a>
+    </aside>
+  </div>
+  {% else %}
+  <div class="card empty">
+    <div class="empty-icon">🛒</div>
+    <h3>Your cart is empty</h3>
+    <p class="muted">Add some medicines or creams to get started.</p>
+    <a href="/medicines" class="btn-primary">Browse medicines</a>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+document.querySelectorAll('.qty-btn').forEach(function (b) {
+  b.addEventListener('click', function () {
+    document.querySelectorAll('.qty-btn').forEach(function (x) { x.disabled = true; });
+    fetch('/api/cart/set', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ medicine_id: parseInt(b.dataset.id, 10), qty: parseInt(b.dataset.qty, 10) })
+    }).then(function (r) {
+      if (r.status === 401) { location.href = '/login'; return; }
+      location.reload();
+    }).catch(function () { location.reload(); });
+  });
+});
+</script>
+{% endblock %}

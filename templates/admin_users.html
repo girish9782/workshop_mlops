@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}All users — Sanjeevani Clinic{% endblock %}
+{% block content %}
+<div class="form-shell wide">
+  <div class="eyebrow-block"><h1>All users</h1>
+    {% if users %}<p class="sub">Loaded through the <code>su_users</code> MCP server · {{ now }}</p>{% endif %}
+  </div>
+
+  {% if error %}
+  <div class="card"><div class="alert">{{ error }}</div>
+    <div class="submit-row"><a href="/chat" class="btn-primary">Back</a></div></div>
+  {% else %}
+  <div class="stat-row">
+    <div class="stat-box"><b>{{ stats.total }}</b><span>Total users</span></div>
+    <div class="stat-box"><b>{{ stats.super_users }}</b><span>Super users</span></div>
+    <div class="stat-box"><b>{{ stats.patients }}</b><span>Patients</span></div>
+    <div class="stat-box"><b>{{ stats.logged_in }}</b><span>Logged in now</span></div>
+  </div>
+
+  <div class="card table-scroll">
+    <table class="appt-table">
+      <thead><tr>
+        <th>User</th><th>Role</th><th>Status</th><th>Last login</th><th>Last logout</th>
+        <th>Logins</th><th>Appts</th>
+      </tr></thead>
+      <tbody>
+      {% for u in users %}
+        <tr>
+          <td>{{ u.name }}{% if u.is_you %} <span class="muted">(you)</span>{% endif %}<br><span class="muted">{{ u.email }}</span></td>
+          <td><span class="role-badge {{ 'role-super' if u.role == 'super_user' else 'role-patient' }}">{{ 'Super user' if u.role == 'super_user' else 'Patient' }}</span></td>
+          <td><span class="status status-{{ u.status|lower|replace(' ', '-') }}">{{ u.status }}</span></td>
+          <td>{{ u.last_login_at or '—' }}</td>
+          <td>{{ u.last_logout_at or '—' }}</td>
+          <td>{{ u.login_count }}</td>
+          <td>{{ u.appointments }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <p class="muted" style="margin-top:12px">Times are server local time. "Logged in" = logged in more recently than the last logout, within the 7-day session. Closing the browser without logging out keeps the status as "Logged in" until the session expires.</p>
+    <div class="submit-row"><a href="/admin/users" class="btn-primary">Refresh</a></div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

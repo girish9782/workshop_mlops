@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}My appointments — Sanjeevani Clinic{% endblock %}
+{% block content %}
+<div class="form-shell">
+  <div class="eyebrow-block"><h1>My appointments</h1></div>
+  <div class="card">
+    {% if appointments %}
+    <table class="appt-table">
+      <thead><tr><th>When</th><th>Doctor</th><th>Reason</th><th>Fee</th></tr></thead>
+      <tbody>
+      {% for a in appointments %}
+        <tr><td>{{ a.when }}</td><td>{{ a.doctor_name }}<br><span class="muted">{{ a.specialty }}</span></td>
+            <td>{{ a.problem or '—' }}</td><td>₹{{ a.fee }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="muted">No appointments yet.</p>
+    {% endif %}
+    <div class="submit-row"><a href="/chat" class="btn-primary">Book a doctor</a></div>
+  </div>
+</div>
+{% endblock %}

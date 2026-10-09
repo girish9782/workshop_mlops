@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Sanjeevani Screening Clinic{% endblock %}
+{% block content %}
+
+<section class="hero">
+  <div class="reveal">
+    <span class="eyebrow-pill"><span class="dot"></span>Screening desk · open 24×7</span>
+    <h1>A quick covid check, <span class="grad-text">before your visit even begins.</span></h1>
+    <p class="lede">
+      Tell us your age, temperature and a couple of symptoms — our screening desk gives you an
+      instant read on your covid risk, so the doctor's time goes where it's needed most.
+    </p>
+    <div class="cta-row">
+      <a href="/chat" class="btn-primary">
+        Book a doctor
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a href="/predict" class="btn-ghost">Start screening</a>
+      <span class="hint-text">Takes under a minute</span>
+    </div>
+    <div class="hero-stats">
+      <div><div class="hs-num">5</div><div class="hs-label">quick inputs</div></div>
+      <div><div class="hs-num">&lt;1 min</div><div class="hs-label">to a result</div></div>
+      <div><div class="hs-num">24×7</div><div class="hs-label">desk open</div></div>
+    </div>
+  </div>
+
+  <div class="hero-visual reveal">
+    <div class="float-chip a"><i>⚡</i> Instant result</div>
+    <div class="result-mock">
+      <div class="rm-top"><span>Sample preview</span><span class="rm-pill">● Screening desk</span></div>
+      <div class="rm-ring">
+        <svg width="110" height="110" viewBox="0 0 120 120">
+          <defs><linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0F766E"/><stop offset="1" stop-color="#38BDF8"/></linearGradient></defs>
+          <circle cx="60" cy="60" r="52" fill="none" stroke="var(--line)" stroke-width="10"/>
+          <circle class="ring-prog" cx="60" cy="60" r="52" fill="none" stroke="url(#ringGrad)" stroke-width="10" stroke-linecap="round" transform="rotate(-90 60 60)"/>
+        </svg>
+        <div><b>Result in seconds</b><span>Age, fever, cough &amp; city</span></div>
+      </div>
+      <div class="rm-grid">
+        <div class="rm-tile"><div class="label">Temperature</div><div class="value">101.2°F</div></div>
+        <div class="rm-tile"><div class="label">Cough</div><div class="value">Mild</div></div>
+        <div class="rm-tile"><div class="label">City</div><div class="value">Jaipur</div></div>
+        <div class="rm-tile"><div class="label">Age</div><div class="value">34</div></div>
+      </div>
+      <svg class="ecg" viewBox="0 0 400 46" fill="none"><path d="M0 24h110l12-18 14 36 12-28 10 10h242" stroke="url(#ringGrad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="float-chip b"><i>🩺</i> Doctor-ready summary</div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-head reveal">
+    <h2>How it works</h2>
+    <p>Three simple steps from symptoms to a booked appointment.</p>
+  </div>
+  <div class="steps">
+    <div class="step reveal"><div class="step-num">1</div><h3>Enter your details</h3><p>Age, temperature, cough type and city — that's all the screening desk needs.</p></div>
+    <div class="step reveal"><div class="step-num">2</div><h3>Get an instant read</h3><p>Our model returns a screening estimate with a confidence score in seconds.</p></div>
+    <div class="step reveal"><div class="step-num">3</div><h3>Book the right doctor</h3><p>Chat with the assistant, pick a specialist and choose a free slot.</p></div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="feature-grid">
+    <div class="reason-card reveal">
+      <div class="icon-bubble"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+      <h3>No queue, no waiting</h3>
+      <p>Fill the form from home or the waiting room — the result comes back the moment you submit it.</p>
+    </div>
+    <div class="reason-card reveal">
+      <div class="icon-bubble"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg></div>
+      <h3>Built on real intake data</h3>
+      <p>The screening model learns from patient records of age, fever, cough type and city to gauge risk.</p>
+    </div>
+    <div class="reason-card reveal">
+      <div class="icon-bubble"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg></div>
+      <h3>A guide, not a diagnosis</h3>
+      <p>Treat this as a first read. A positive result still means the doctor should examine you properly.</p>
+    </div>
+  </div>
+</section>
+
+<section class="cta-band reveal">
+  <div>
+    <h2>Not feeling well? Don't wait.</h2>
+    <p>Describe your problem to our assistant and get matched with the right doctor.</p>
+  </div>
+  <a href="/chat" class="btn-light">Book a doctor →</a>
+</section>
+
+{% endblock %}

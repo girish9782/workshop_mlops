@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+{% block title %}Book a doctor — Sanjeevani Clinic{% endblock %}
+{% block content %}
+<div class="chat-shell">
+  <div class="eyebrow-block">
+    <h1>Doctor appointment assistant</h1>
+    <p class="sub">Tell me what's troubling you, or send a photo of an injury, and I'll suggest the right specialist and available slots.</p>
+    <a class="sos-link" href="tel:112">🚨 Emergency? Call 112 now</a>
+  </div>
+  <div class="chat-window" id="chat" aria-live="polite"></div>
+  <form id="chat-form" class="chat-input">
+    <button type="button" id="attach" class="attach-btn" title="Send an injury photo" aria-label="Send an injury photo">📎</button>
+    <input type="file" id="photo" accept="image/jpeg,image/png,image/webp" hidden />
+    <input id="msg" maxlength="1000" autocomplete="off" required
+           placeholder="e.g. I have had stomach pain and vomiting for 2 days" />
+    <button type="submit" id="send">Send</button>
+  </form>
+  <p class="muted photo-note">Photos are sent to an AI service for analysis and are not saved on our server. AI can miss things — it's a guide, not a diagnosis.</p>
+</div>
+
+<script>
+const USER_NAME = {{ user.name.split(' ')[0]|tojson }};
+const CTX = {{ context|tojson }};
+let followupPending = null;   // set while we are waiting for 'how is your earlier problem now?'
+const chat = document.getElementById('chat');
+const form = document.getElementById('chat-form');
+const input = document.getElementById('msg');
+const sendBtn = document.getElementById('send');
+
+function add(el) { chat.appendChild(el); chat.scrollTop = chat.scrollHeight; return el; }
+function bubble(text, who, extra) {
+  const d = document.createElement('div');
+  d.className = 'bubble ' + who + (extra ? ' ' + extra : '');
+  d.textContent = text;           // textContent: user/doctor text can never inject HTML
+  return add(d);
+}
+async function api(url, opts) {
+  const r = await fetch(url, opts);
+  if (r.status === 401) { location.href = '/login'; return { ok: false, data: {} }; }
+  let data = {};
+  try { data = await r.json(); } catch (e) {}
+  return { ok: r.ok, data };
+}
+
+function showEmergency(doctors) {
+  const card = document.createElement('div');
+  card.className = 'emergency-card';
+  const t = document.createElement('strong'); t.textContent = '🚨 Get emergency help now';
+  const row = document.createElement('div'); row.className = 'em-actions';
+  const call = document.createElement('a'); call.href = 'tel:112'; call.className = 'em-btn em-call';
+  call.textContent = '📞 Call 112';
+  const amb = document.createElement('a'); amb.href = 'tel:108'; amb.className = 'em-btn';
+  amb.textContent = '🚑 Ambulance 108';
+  const map = document.createElement('a');
+  map.href = 'https://www.google.com/maps/search/emergency+hospital+near+me';
+  map.target = '_blank'; map.rel = 'noopener noreferrer'; map.className = 'em-btn';
+  map.textContent = '🏥 Nearest hospital';
+  row.append(call, amb, map);
+  card.append(t, row);
+  if (doctors && doctors.length) {
+    const later = document.createElement('button');
+    later.type = 'button'; later.className = 'em-link';
+    later.textContent = 'This is not an emergency — show doctors';
+    later.onclick = () => { later.remove(); showDoctors(doctors); };
+    card.appendChild(later);
+  }
+  add(card);
+}
+
+function handleResult(data) {
+  bubble(data.reply, 'bot', data.emergency ? 'warn' : '');
+  if (data.emergency) showEmergency(data.doctors);
+  else if (data.doctors && data.doctors.length) showDoctors(data.doctors);
+}
+
+// Shrink the photo in the browser (max 1024px, JPEG) so uploads are fast and small.
+function downscale(file, max = 1024) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const k = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      c.toBlob(b => { URL.revokeObjectURL(url); b ? resolve(b) : reject(); }, 'image/jpeg', 0.85);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(); };
+    img.src = url;
+  });
+}
+
+const attach = document.getElementById('attach');
+const photo = document.getElementById('photo');
+attach.addEventListener('click', () => photo.click());
+photo.addEventListener('change', async () => {
+  const file = photo.files[0];
+  photo.value = '';
+  if (!file) return;
+  await quietSkip();
+  const note = input.value.trim();
+  input.value = '';
+  sendBtn.disabled = attach.disabled = true;
+  const thumb = document.createElement('img');
+  thumb.className = 'thumb'; thumb.alt = 'Your photo';
+  thumb.src = URL.createObjectURL(file);
+  const mine = bubble(note ? note : 'Here is a photo of my injury', 'user');
+  mine.appendChild(document.createElement('br')); mine.appendChild(thumb);
+  const thinking = bubble('Looking at your photo…', 'bot', 'thinking');
+  try {
+    const blob = await downscale(file);
+    const fd = new FormData();
+    fd.append('file', blob, 'injury.jpg'); fd.append('note', note);
+    const { ok, data } = await api('/api/chat-image', { method: 'POST', body: fd });
+    thinking.remove();
+    if (ok) handleResult(data);
+    else bubble(data.error || 'Sorry, I could not process that photo.', 'bot', 'warn');
+  } catch (e) {
+    thinking.remove();
+    bubble('I could not read that image. Please try a JPG or PNG photo.', 'bot', 'warn');
+  }
+  sendBtn.disabled = attach.disabled = false;
+});
+
+function chipRow(items) {
+  const row = document.createElement('div');
+  row.className = 'slot-row';
+  items.forEach(([label, fn]) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'slot-chip fu-chip'; b.textContent = label;
+    b.onclick = () => { row.querySelectorAll('button').forEach(x => x.disabled = true); fn(); };
+    row.appendChild(b);
+  });
+  add(row);
+}
+
+async function submitFollowup(payload, label) {
+  const p = followupPending; followupPending = null;
+  if (!p) return;
+  document.querySelectorAll('.fu-chip').forEach(b => b.disabled = true);
+  bubble(label, 'user');
+  const thinking = bubble('…', 'bot', 'thinking');
+  const { ok, data } = await api('/api/followup', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(Object.assign({ appointment_id: p.id }, payload))
+  });
+  thinking.remove();
+  if (!ok) {
+    bubble(data.error || 'Sorry, something went wrong. Tell me what you need and I will help.', 'bot', 'warn');
+    return;
+  }
+  bubble(data.reply, 'bot', (data.emergency || data.status === 'worse') ? 'warn' : '');
+  if (data.emergency) showEmergency([]);
+  const chips = [];
+  if (data.doctor) chips.push(['Book follow-up with ' + data.doctor.name, () => showSlots(data.doctor)]);
+  if (data.status === 'same' || data.status === 'worse') {
+    chips.push(['I also have something new', () => {
+      bubble('I also have something new', 'user');
+      bubble('Sure — describe it in your own words, or send a photo with 📎.', 'bot');
+    }]);
+  }
+  if (chips.length) chipRow(chips);
+}
+
+async function quietSkip() {   // user moved on (e.g. sent a photo) without answering
+  const p = followupPending; followupPending = null;
+  if (!p) return;
+  document.querySelectorAll('.fu-chip').forEach(b => b.disabled = true);
+  await api('/api/followup', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ appointment_id: p.id, status: 'skipped' }) });
+}
+
+function greet() {
+  const p = CTX.pending, u = CTX.upcoming;
+  if (p) {
+    followupPending = p;
+    let t = 'Welcome back, ' + USER_NAME + '! 👋 On ' + p.date + ' you had an appointment with ' +
+            p.doctor_name + ' (' + p.specialty + ')';
+    t += p.problem ? ' for: "' + p.problem + '".' : '.';
+    t += '\n\nHow are you feeling now? (Ab aap kaisa feel kar rahe hain?) Tap an option or type it in your own words.';
+    bubble(t, 'bot');
+    chipRow([
+      ['😊 Better now', () => submitFollowup({ status: 'better' }, 'I feel better now')],
+      ['😐 About the same', () => submitFollowup({ status: 'same' }, 'About the same')],
+      ['😟 Worse', () => submitFollowup({ status: 'worse' }, 'It is worse')],
+      ['I have something new', () => submitFollowup({ status: 'skipped' }, 'I have something new')],
+    ]);
+    return;
+  }
+  if (u) {
+    bubble('Hi ' + USER_NAME + '! 👋 Reminder: you have an appointment with ' + u.doctor_name +
+           ' on ' + u.date + ' at ' + u.time + '.', 'bot');
+    bubble('I can also help with something new. Describe your problem in your own words.', 'bot');
+  } else {
+    bubble('Hi ' + USER_NAME + '! 👋 I can help you book a doctor. Please describe your health ' +
+           'problem or symptoms in your own words.', 'bot');
+  }
+}
+
+function showDoctors(doctors) {
+  const wrap = document.createElement('div');
+  wrap.className = 'doc-list';
+  doctors.forEach(d => {
+    const card = document.createElement('div');
+    card.className = 'doc-card';
+    const info = document.createElement('div');
+    const n = document.createElement('strong'); n.textContent = d.name;
+    const m = document.createElement('div'); m.className = 'muted';
+    m.textContent = d.specialty + ' · ' + d.experience + ' yrs · ₹' + d.fee;
+    info.append(n, m);
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.textContent = 'See slots';
+    btn.onclick = () => showSlots(d);
+    card.append(info, btn);
+    wrap.appendChild(card);
+  });
+  add(wrap);
+}
+
+async function showSlots(doctor) {
+  bubble('Show me ' + doctor.name + "'s available slots", 'user');
+  const { ok, data } = await api('/api/doctors/' + doctor.id + '/slots');
+  if (!ok || !data.slots || !data.slots.length) {
+    bubble('There are no free slots for ' + doctor.name + ' right now. Please try another doctor.', 'bot');
+    return;
+  }
+  bubble('Pick a time that works for you:', 'bot');
+  const days = {};
+  data.slots.forEach(s => { (days[s.day] = days[s.day] || []).push(s); });
+  const wrap = document.createElement('div');
+  wrap.className = 'slot-list';
+  Object.keys(days).forEach(day => {
+    const label = document.createElement('div'); label.className = 'slot-day'; label.textContent = day;
+    const row = document.createElement('div'); row.className = 'slot-row';
+    days[day].forEach(s => {
+      const chip = document.createElement('button');
+      chip.type = 'button'; chip.className = 'slot-chip'; chip.textContent = s.time;
+      chip.onclick = () => book(doctor, s, wrap);
+      row.appendChild(chip);
+    });
+    wrap.append(label, row);
+  });
+  add(wrap);
+}
+
+async function book(doctor, slot, wrap) {
+  wrap.querySelectorAll('button').forEach(b => b.disabled = true);
+  bubble('Book ' + slot.day + ' at ' + slot.time, 'user');
+  const { ok, data } = await api('/api/book', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ doctor_id: doctor.id, slot: slot.value })
+  });
+  if (ok) {
+    bubble('Your appointment with ' + data.doctor + ' is confirmed for ' + data.when +
+           '. You can see it under "My appointments". Take care!', 'bot', 'success');
+  } else {
+    bubble(data.error || 'Something went wrong. Please try again.', 'bot', 'warn');
+    showSlots(doctor);
+  }
+}
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const text = input.value.trim();
+  if (!text) return;
+  if (followupPending) { input.value = ''; await submitFollowup({ text }, text); return; }
+  input.value = ''; sendBtn.disabled = true;
+  bubble(text, 'user');
+  const thinking = bubble('Analyzing…', 'bot', 'thinking');
+  const { ok, data } = await api('/api/chat', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: text })
+  });
+  thinking.remove();
+  if (ok) {
+    handleResult(data);
+  } else {
+    bubble('Sorry, something went wrong. Please try again.', 'bot', 'warn');
+  }
+  sendBtn.disabled = false; input.focus();
+});
+
+greet();
+</script>
+{% endblock %}
